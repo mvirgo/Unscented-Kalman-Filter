@@ -47,13 +47,6 @@ UKF::UKF() {
   // Radar measurement noise standard deviation radius change in m/s
   std_radrd_ = 0.3;
 
-  /**
-  TODO:
-
-  Complete the initialization. See ukf.h for other member properties.
-
-  Hint: one or more values initialized above might be wildly off...
-  */
   // Not initialized until first process measurement
   is_initialized_ = false;
   
@@ -293,17 +286,6 @@ void UKF::Prediction(double delta_t) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
-  /**
-  TODO:
-
-  Complete this function! Use lidar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
-
-  You'll also need to calculate the lidar NIS.
-  */
-  
-  //define spreading parameter
-  lambda_ = 3 - n_aug_;
   
   //set measurement dimension, lidar can measure px and py
   int n_z = 2;
@@ -319,6 +301,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   
   Zsig.fill(0.0);
   z_pred.fill(0.0);
+  S.fill(0.0);
   
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     //transform sigma points into measurement space
@@ -336,11 +319,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //calculate measurement covariance matrix S
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
-    if (z_diff(1) > M_PI) {
-      z_diff(1) -= 2. * M_PI;
-    } else if (z_diff(1) < - M_PI) {
-      z_diff(1) += 2. * M_PI;
-    }
     S += weights_(i) * z_diff * z_diff.transpose();
   }
   
@@ -350,7 +328,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
        0, std_laspy_*std_laspy_;
   S += R;
   
-  //create example vector for incoming radar measurement
+  //create vector for incoming radar measurement
   VectorXd z = VectorXd(n_z);
   
   double meas_px = meas_package.raw_measurements_(0);
@@ -366,30 +344,31 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   //calculate cross correlation matrix
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
+    
     //normalize angles
     if (x_diff(3) > M_PI) {
       x_diff(3) -= 2. * M_PI;
     } else if (x_diff(3) < -M_PI) {
       x_diff(3) += 2. * M_PI;
     }
-    VectorXd z_diff = Zsig.col(i) - z_pred;
-    //normalize angles
-    if (z_diff(1) > M_PI) {
-      z_diff(1) -= 2. * M_PI;
-    } else if (z_diff(1) < -M_PI) {
-      z_diff(1) += 2. * M_PI;
-    }
-    Tc += weights_(i) * x_diff * z_diff.transpose();
     
-    //calculate NIS
-    NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
+    VectorXd z_diff = Zsig.col(i) - z_pred;
+
+    Tc += weights_(i) * x_diff * z_diff.transpose();
+
   }
+  
+  // residual
+  VectorXd z_diff = z - z_pred;
+  
+  //calculate NIS
+  NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
   
   //calculate Kalman gain K;
   MatrixXd K = Tc * S.inverse();
   
   //update state mean and covariance matrix
-  x_ += K*(z-z_pred);
+  x_ += K*z_diff;
   P_ -= K*S*K.transpose();
   
 }
@@ -399,17 +378,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
-  /**
-  TODO:
-
-  Complete this function! Use radar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
-
-  You'll also need to calculate the radar NIS.
-  */
-  
-  //define spreading parameter
-  lambda_ = 3 - n_aug_;
   
   //set measurement dimension, radar can measure r, phi, and r_dot
   int n_z = 3;
@@ -425,6 +393,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   
   Zsig.fill(0.0);
   z_pred.fill(0.0);
+  S.fill(0.0);
   double rho = 0;
   double phi = 0;
   double rho_d = 0;
@@ -501,15 +470,26 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     }
     Tc += weights_(i) * x_diff * z_diff.transpose();
     
-    //calculate NIS
-    NIS_radar_ = z_diff.transpose() * S.inverse() * z_diff;
   }
+  
+  // residual
+  VectorXd z_diff = z - z_pred;
+  
+  //normalize angles
+  if (z_diff(1) > M_PI) {
+    z_diff(1) -= 2. * M_PI;
+  } else if (z_diff(1) < -M_PI) {
+    z_diff(1) += 2. * M_PI;
+  }
+  
+  //calculate NIS
+  NIS_radar_ = z_diff.transpose() * S.inverse() * z_diff;
   
   //calculate Kalman gain K;
   MatrixXd K = Tc * S.inverse();
   
   //update state mean and covariance matrix
-  x_ += K*(z-z_pred);
+  x_ += K*z_diff;
   P_ -= K*S*K.transpose();
   
 }
