@@ -64,7 +64,7 @@ UKF::UKF() {
   n_aug_ = 7;
   
   // Define spreading parameter
-  lambda_ = 3 - n_aug_;
+  lambda_ = 0;
   
   // Matrix to hold sigma points
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -124,16 +124,18 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     
     // done initializing, no need to predict or update
     is_initialized_ = true;
+    time_us_ = meas_package.timestamp_;
     return;
+    
   }
   
   // Calculate delta_t, store current time for future
   double delta_t = (meas_package.timestamp_ - time_us_) / 1000000.0;
   time_us_ = meas_package.timestamp_;
-  
+
   // Predict
   Prediction(delta_t);
-  
+
   // Measurement updates
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
     UpdateRadar(meas_package);
@@ -150,6 +152,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  */
 void UKF::Prediction(double delta_t) {
   
+  // Define spreading parameter
+  lambda_ = 3 - n_x_;
+  
   //create sigma point matrix
   MatrixXd Xsig_ = MatrixXd(n_x_, 2 * n_x_ + 1);
   
@@ -162,6 +167,9 @@ void UKF::Prediction(double delta_t) {
     Xsig_.col(i+1) = x_ + std::sqrt(lambda_+n_x_)*A_.col(i);
     Xsig_.col(i+1+n_x_) = x_ - std::sqrt(lambda_+n_x_)*A_.col(i);
   }
+  
+  // Define spreading parameter for augmentation
+  lambda_ = 3 - n_aug_;
   
   //create augmented mean vector
   VectorXd x_aug_ = VectorXd(7);
@@ -240,6 +248,15 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_.col(i) << orig + vec1 + vec2;
   }
   
+  //create vector for predicted state
+  VectorXd x_pred = VectorXd(n_x_);
+  
+  //create covariance matrix for prediction
+  MatrixXd P_pred = MatrixXd(n_x_, n_x_);
+  
+  x_pred.fill(0.0);
+  P_pred.fill(0.0);
+  
   for(int i = 0; i < 2 * n_aug_ + 1; i++) {
     
     //set weights
@@ -250,23 +267,25 @@ void UKF::Prediction(double delta_t) {
     }
     
     //predict state mean
-    x_ += weights_(i) * Xsig_pred_.col(i);
+    x_pred += weights_(i) * Xsig_pred_.col(i);
   }
   
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     
     //predict state covariance matrix
-    VectorXd x_diff = Xsig_pred_.col(i) - x_;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_pred;
     
     //normalize angles
     if (x_diff(3) > M_PI) {
-      x_diff(3) -= 2 * M_PI;
+      x_diff(3) -= 2. * M_PI;
     } else if (x_diff(3) < -M_PI) {
-      x_diff(3) += 2 * M_PI;
+      x_diff(3) += 2. * M_PI;
     }
-    P_ += weights_(i) * x_diff * x_diff.transpose();
+    P_pred += weights_(i) * x_diff * x_diff.transpose();
   }
   
+  x_ = x_pred;
+  P_ = P_pred;
 }
 
 /**
@@ -282,6 +301,9 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the lidar NIS.
   */
+  
+  //define spreading parameter
+  lambda_ = 3 - n_aug_;
   
   //set measurement dimension, lidar can measure px and py
   int n_z = 2;
@@ -346,16 +368,16 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //normalize angles
     if (x_diff(3) > M_PI) {
-      x_diff(3) -= 2 * M_PI;
+      x_diff(3) -= 2. * M_PI;
     } else if (x_diff(3) < -M_PI) {
-      x_diff(3) += 2 * M_PI;
+      x_diff(3) += 2. * M_PI;
     }
     VectorXd z_diff = Zsig.col(i) - z_pred;
     //normalize angles
     if (z_diff(1) > M_PI) {
-      z_diff(1) -= 2 * M_PI;
+      z_diff(1) -= 2. * M_PI;
     } else if (z_diff(1) < -M_PI) {
-      z_diff(1) += 2 * M_PI;
+      z_diff(1) += 2. * M_PI;
     }
     Tc += weights_(i) * x_diff * z_diff.transpose();
     
@@ -385,6 +407,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the radar NIS.
   */
+  
+  //define spreading parameter
+  lambda_ = 3 - n_aug_;
   
   //set measurement dimension, radar can measure r, phi, and r_dot
   int n_z = 3;
@@ -463,16 +488,16 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //normalize angles
     if (x_diff(3) > M_PI) {
-      x_diff(3) -= 2 * M_PI;
+      x_diff(3) -= 2. * M_PI;
     } else if (x_diff(3) < -M_PI) {
-      x_diff(3) += 2 * M_PI;
+      x_diff(3) += 2. * M_PI;
     }
     VectorXd z_diff = Zsig.col(i) - z_pred;
     //normalize angles
     if (z_diff(1) > M_PI) {
-      z_diff(1) -= 2 * M_PI;
+      z_diff(1) -= 2. * M_PI;
     } else if (z_diff(1) < -M_PI) {
-      z_diff(1) += 2 * M_PI;
+      z_diff(1) += 2. * M_PI;
     }
     Tc += weights_(i) * x_diff * z_diff.transpose();
     
