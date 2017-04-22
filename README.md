@@ -15,13 +15,21 @@ Assuming you have 'cmake' and 'make' already:
    * eg. `./UnscentedKF ../data/obj_pose-laser-radar-synthetic-input.txt output.txt`
 
 ## Results
-This project is still in-progress.
+Based on the provided data set, my Unscented Kalman Filter will produce the below results. The x-position is shown as 'px', y-position as 'py', velocity in the x-direction is 'vx', while velocity in the y-direction is 'vy'. Residual error is calculated by mean squared error (MSE).
 
-* Completed Steps:
-   * Adding RMSE calculation to tools.cpp
-   * Adding initialization code
-   * Adding prediction code
-   * Adding update code for both radar and lidar
-   * Tuned initialization paramaters to be better than the minimum required RMSE
-* Upcoming Steps:
-   * Adding visualizations to this ReadMe
+| Input |   MSE   |
+| ----- | ------- |
+|  px   | 0.06908 |
+|  py   | 0.07967 |
+|  vx   | 0.16735 |
+|  vy   | 0.20016 |
+
+### Comparisons
+Below I have also included the results of only running one sensor at a time (lidar or radar), as well as what the results of my previous [Extended Kalman Filter](https://github.com/mvirgo/Extended-Kalman-Filter) are for this dataset. As expected, the Unscented Kalman Filter that uses sensor fusion to combine lidar and radar measurements is the most accurate (lowest MSE) of the results.
+
+| Input | UKF-Lidar | UKF-Radar | EKF-Fused | UKF-Fused |
+| ----- | --------- | --------- | --------- | --------- |
+|  px   |  0.09346  |  0.15123  |  0.13997  |  0.06908  |
+|  py   |  0.09683  |  0.19708  |  0.66551  |  0.07967  |
+|  vx   |  0.24238  |  0.20591  |  0.60388  |  0.16735  |
+|  vy   |  0.31516  |  0.24436  |  1.62373  |  0.20016  |
