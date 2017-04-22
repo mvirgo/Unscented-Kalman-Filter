@@ -232,6 +232,6 @@ int main(int argc, char* argv[]) {
     in_file_.close();
   }
 
-  cout << "Done!" << endl;
+  //cout << "Done!" << endl;
   return 0;
 }
