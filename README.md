@@ -45,3 +45,16 @@ Below I have also included the results of only running one sensor at a time (lid
 |  py   |  0.09683  |  0.19708  |  0.66551  |  0.07967  |
 |  vx   |  0.24238  |  0.20591  |  0.60388  |  0.16735  |
 |  vy   |  0.31516  |  0.24436  |  1.62373  |  0.20016  |
+
+### Visualization
+Below are some visualizations of the results for the Unscented Kalman Filter using both lidar and radar measurements.
+
+![Position Accuracy](/images/position_acc1.png)
+
+![More Position Accuracy](/images/position_acc2.png)
+
+![Velocity Accuracy](/images/velocity_acc.png)
+
+![NIS for Lidar](/images/NIS_lidar.png)
+
+![NIS for Radar](/images/NIS_radar.png)
