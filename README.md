@@ -22,7 +22,6 @@ This project is still in-progress.
    * Adding initialization code
    * Adding prediction code
    * Adding update code for both radar and lidar
+   * Tuned initialization paramaters to be better than the minimum required RMSE
 * Upcoming Steps:
-   * Debugging code to appropriately return RMSE values
-   * Tuning certain initialization paramaters to help reduce end RMSE and NIS
-   * Adding visualizations (may be concurrent with above step)
+   * Adding visualizations to this ReadMe
