@@ -12,7 +12,7 @@ Assuming you have 'cmake' and 'make' already:
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./UnscentedKF path/to/input.txt path/to/output.txt`. You can find some sample inputs in 'data/'.
-   * eg. `./UnscentedKF ../data/obj_pose-laser-radar-synthetic-input.txt`
+   * eg. `./UnscentedKF ../data/obj_pose-laser-radar-synthetic-input.txt output.txt`
 
 ## Results
 This project is still in-progress.
@@ -21,7 +21,8 @@ This project is still in-progress.
    * Adding RMSE calculation to tools.cpp
    * Adding initialization code
    * Adding prediction code
-* Upcoming Steps:
    * Adding update code for both radar and lidar
+* Upcoming Steps:
+   * Debugging code to appropriately return RMSE values
    * Tuning certain initialization paramaters to help reduce end RMSE and NIS
    * Adding visualizations (may be concurrent with above step)
