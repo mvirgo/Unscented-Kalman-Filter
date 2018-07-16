@@ -65,10 +65,6 @@ UKF::UKF() {
   // Vector for weights
   weights_ = VectorXd(2*n_aug_+1);
   
-  // Noise matrices
-  R_radar = MatrixXd(3,3);
-  R_laser = MatrixXd(2,2);
-  
   // Start time
   time_us_ = 0;
   
@@ -104,12 +100,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             0, 0, 1, 0, 0,
             0, 0, 0, std_radphi_, 0,
             0, 0, 0, 0, std_radphi_;
-      
-      // Create R for update noise later
-      R_radar << std_radr_*std_radr_, 0, 0,
-                 0, std_radphi_*std_radphi_, 0,
-                 0, 0, std_radrd_*std_radrd_;
-
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       // Initialize state.
@@ -123,11 +113,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             0, 0, 1, 0, 0,
             0, 0, 0, 1, 0,
             0, 0, 0, 0, 1;
-      
-      // Create R for update noise later
-      R_laser << std_laspx_*std_laspx_, 0,
-                 0, std_laspy_*std_laspy_;
-
     }
     
     // done initializing, no need to predict or update
@@ -337,8 +322,11 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     S += weights_(i) * z_diff * z_diff.transpose();
   }
   
-  // Add R (noise) to S
-  S += R_laser;
+  // Add R to S
+  MatrixXd R = MatrixXd(2,2);
+  R << std_laspx_*std_laspx_, 0,
+       0, std_laspy_*std_laspy_;
+  S += R;
   
   //create vector for incoming radar measurement
   VectorXd z = VectorXd(n_z);
@@ -442,8 +430,12 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     S += weights_(i) * z_diff * z_diff.transpose();
   }
   
-  // Add R (noise) to S
-  S += R_radar;
+  // Add R to S
+  MatrixXd R = MatrixXd(3,3);
+  R << std_radr_*std_radr_, 0, 0,
+       0, std_radphi_*std_radphi_, 0,
+       0, 0, std_radrd_*std_radrd_;
+  S += R;
   
   //create example vector for incoming radar measurement
   VectorXd z = VectorXd(n_z);
